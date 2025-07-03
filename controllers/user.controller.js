@@ -100,3 +100,67 @@ const addUsers = async (request, response) => {
     await prisma.$disconnect();
   }
 };
+
+const userLogin = async (request, response) => {
+  console.log("userLogin========>>", request.body);
+  const { email, password } = request.body;
+
+  if (!email || !password) {
+    return response.status(401).json({
+      error: true,
+      success: false,
+      message: "Email and password required",
+    });
+  }
+  try {
+    const user = await prisma.users.findFirst({
+      where: { email: email },
+    });
+
+    if (!user) {
+      return response.status(401).json({
+        error: true,
+        success: false,
+        message: "Incorrect Email or password!",
+      });
+    }
+
+    const logged_id = user.id;
+    const hashedDbPassword = user.password;
+    bcrypt.compare(password, hashedDbPassword, async function (err, result) {
+      if (err) {
+        return response.status(500).json({
+          error: true,
+          success: false,
+          message: "Password hashing error",
+        });
+      }
+
+      if (!result) {
+        return response.status(401).json({
+          error: true,
+          success: false,
+          message: "Please check your password!",
+        });
+      }
+      return response.status(200).json({
+        success: true,
+        error: false,
+        message: "Login successful",
+        logged_id: logged_id,
+      });
+    });
+  } catch (error) {
+    console.log("errr", error);
+    // logger.error(`Internal server error: ${error.message} in userLogin api`);
+    return response.status(500).json({
+      error: true,
+      success: false,
+      message: "Internal Server Error!",
+    });
+  }
+};
+module.exports = {
+  userLogin,
+  addUsers,
+};
