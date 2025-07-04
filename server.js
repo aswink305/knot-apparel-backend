@@ -7,7 +7,7 @@ const HOST = process.env.HOST;
 const server = express();
 const cors = require("cors");
 
-const UserRouter = require("./routes/user/user.routes");
+const UserRouter = require("./routes/user.routes");
 
 server.use(
   cors({

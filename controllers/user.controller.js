@@ -1,4 +1,4 @@
-const { getCurrentDateInIST, istDate, logger, prisma } = require("../../utils");
+const { getCurrentDateInIST, istDate, logger, prisma } = require("../utils");
 require("dotenv").config();
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
