@@ -28,17 +28,16 @@ datasource db {
    
   }
 
-  model product_master {
-  product_id                                                                      Int                      @id(map: "PRODUCT_MASTER_pkey") @default(autoincrement())
-  product_code                                                                    String?                  @unique(map: "product_code_unique") @db.VarChar
-  product_name                                                                    String?                  @db.VarChar
-  product_desc                                                                    String?                  @db.VarChar
-  product_type                                                                    String?                  @db.VarChar 
-  created_date                                                                    DateTime?                @db.Timestamp(6)
-  updated_date                                                                    DateTime?                @db.Timestamp(6) 
-  color                                                                           String?                  @db.VarChar                                                              String?                  @db.VarChar
-  images                                                                          Json?                    @db.Json
-
+model product_master {
+  product_id        Int      @id(map: "PRODUCT_MASTER_pkey") @default(autoincrement())
+  product_code      String?  @unique(map: "product_code_unique") @db.VarChar
+  product_name      String?  @db.VarChar
+  product_desc      String?  @db.VarChar
+  product_type      String?  @db.VarChar 
+  created_date      DateTime? @db.Timestamp(6)
+  updated_date      DateTime? @db.Timestamp(6)
+  color             String?  @db.VarChar
+  images            String?  @db.VarChar
 }
 
 

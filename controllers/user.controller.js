@@ -103,56 +103,60 @@ const addUsers = async (request, response) => {
 
 const userLogin = async (request, response) => {
   console.log("userLogin========>>", request.body);
-  const { email, password } = request.body;
+  const { email, password, name, verificationFrom } = request.body;
 
-  if (!email || !password) {
+  if (!email || !verificationFrom) {
     return response.status(401).json({
       error: true,
       success: false,
-      message: "Email and password required",
+      message: "Email and verificationFrom required",
     });
   }
+
   try {
-    const user = await prisma.users.findFirst({
+    let user = await prisma.users.findFirst({
       where: { email: email },
     });
+
+    if (verificationFrom === "googleAuth") {
+      if (!user) {
+        user = await prisma.users.create({
+          data: { email, password, name },
+        });
+      }
+
+      return response.status(200).json({
+        success: true,
+        error: false,
+        message: "Login successful",
+        logged_id: user.id,
+      });
+    }
 
     if (!user) {
       return response.status(401).json({
         error: true,
         success: false,
-        message: "Incorrect Email or password!",
+        message: "User not found",
       });
     }
 
-    const logged_id = user.id;
-    const hashedDbPassword = user.password;
-    bcrypt.compare(password, hashedDbPassword, async function (err, result) {
-      if (err) {
-        return response.status(500).json({
-          error: true,
-          success: false,
-          message: "Password hashing error",
-        });
-      }
-
-      if (!result) {
-        return response.status(401).json({
-          error: true,
-          success: false,
-          message: "Please check your password!",
-        });
-      }
-      return response.status(200).json({
-        success: true,
-        error: false,
-        message: "Login successful",
-        logged_id: logged_id,
+    if (user.password !== password) {
+      return response.status(401).json({
+        error: true,
+        success: false,
+        message: "Incorrect password",
       });
+    }
+
+    return response.status(200).json({
+      success: true,
+      error: false,
+      message: "Login successful",
+      logged_id: user.id,
     });
   } catch (error) {
     console.log("errr", error);
-    // logger.error(`Internal server error: ${error.message} in userLogin api`);
     return response.status(500).json({
       error: true,
       success: false,
@@ -160,6 +164,7 @@ const userLogin = async (request, response) => {
     });
   }
 };
+
 module.exports = {
   userLogin,
   addUsers,
