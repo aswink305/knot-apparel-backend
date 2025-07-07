@@ -114,14 +114,14 @@ const userLogin = async (request, response) => {
   }
 
   try {
-    let user = await prisma.users.findFirst({
+    let user = await prisma.user_details.findFirst({
       where: { email: email },
     });
 
     if (verificationFrom === "googleAuth") {
       if (!user) {
-        user = await prisma.users.create({
-          data: { email, password, name },
+        user = await prisma.user_details.create({
+          data: { email, password, name, created_date: istDate },
         });
       }
 
