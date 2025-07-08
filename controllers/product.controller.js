@@ -17,7 +17,7 @@ const productadd = async (request, response) => {
       color,
       color_family,
       product_code,
-      images = [], 
+      images = [],
     } = request.body;
 
     // Basic validation
@@ -74,7 +74,11 @@ const getProducts = async (request, response) => {
       },
     });
 
-    response.status(200).json(products);
+    response.status(200).json({
+      success: true,
+      error: false,
+      data: products,
+    });
   } catch (err) {
     console.error("Error in getProducts:", err.message);
     response.status(500).json("Internal Server Error");

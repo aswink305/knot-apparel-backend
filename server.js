@@ -8,7 +8,7 @@ const server = express();
 const cors = require("cors");
 
 const UserRouter = require("./routes/user.routes");
-
+const ProductRouter = require("./routes/product.routes");
 server.use(
   cors({
     origin: "*",
@@ -21,7 +21,7 @@ server.use(express.json());
 server.use(express.urlencoded({ extended: true }));
 
 server.use("/user", UserRouter);
-
+server.use("/product", ProductRouter);
 
 if (process.env.NODE_ENV === "development") {
   server.listen(PORT, () => {
