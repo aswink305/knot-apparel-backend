@@ -4,6 +4,7 @@ const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const csv = require("csv-parser");
 const fs = require("fs");
+const verifyToken = require("../utils/verifytoken");
 
 const addUsers = async (request, response) => {
   try {
@@ -101,40 +102,171 @@ const addUsers = async (request, response) => {
   }
 };
 
+// const userLogin = async (request, response) => {
+//   console.log("userLogin========>>", request.body);
+//   const { email, password, name, verificationFrom } = request.body;
+
+//   if (!email || !verificationFrom) {
+//     return response.status(401).json({
+//       error: true,
+//       success: false,
+//       message: "Email and verificationFrom required",
+//     });
+//   }
+
+//   try {
+//     let user = await prisma.user_details.findFirst({
+//       where: { email: email },
+//     });
+
+//     if (verificationFrom === "googleAuth") {
+//       if (!user) {
+//         user = await prisma.user_details.create({
+//           data: { email, password, name, created_date: istDate },
+//         });
+//       }
+//       const refreshTokenPayload = {
+//         id: user.id,
+//       };
+
+//       const accessTokenPayload = {
+//         id: user.id,
+//       };
+
+//       const refreshTokenOptions = {
+//         expiresIn: "900m",
+//       };
+
+//       const accessTokenOptions = {
+//         expiresIn: "5m",
+//       };
+
+//       const refreshToken = jwt.sign(
+//         refreshTokenPayload,
+//         process.env.REFRESH_TOKEN_SECRET,
+//         refreshTokenOptions
+//       );
+
+//       const accessToken = jwt.sign(
+//         accessTokenPayload,
+//         process.env.ACCESS_TOKEN_SECRET,
+//         accessTokenOptions
+//       );
+
+//       return response.status(200).json({
+//         success: true,
+//         error: false,
+//         message: "Login successful",
+//         logged_id: user.id,
+//         refreshToken,
+//         accessToken,
+//       });
+//     }
+
+//     if (!user) {
+//       return response.status(401).json({
+//         error: true,
+//         success: false,
+//         message: "User not found",
+//       });
+//     }
+
+//     if (user.password !== password) {
+//       return response.status(401).json({
+//         error: true,
+//         success: false,
+//         message: "Incorrect password",
+//       });
+//     }
+//     const refreshTokenPayload = {
+//       id: user.id,
+//     };
+
+//     const accessTokenPayload = {
+//       id: user.id,
+//     };
+
+//     const refreshTokenOptions = {
+//       expiresIn: "900m",
+//     };
+
+//     const accessTokenOptions = {
+//       expiresIn: "5m",
+//     };
+
+//     const refreshToken = jwt.sign(
+//       refreshTokenPayload,
+//       process.env.REFRESH_TOKEN_SECRET,
+//       refreshTokenOptions
+//     );
+
+//     const accessToken = jwt.sign(
+//       accessTokenPayload,
+//       process.env.ACCESS_TOKEN_SECRET,
+//       accessTokenOptions
+//     );
+
+//     return response.status(200).json({
+//       success: true,
+//       error: false,
+//       message: "Login successful",
+//       logged_id: user.id,
+//       refreshToken,
+//       accessToken,
+//     });
+//   } catch (error) {
+//     console.log("errr", error);
+//     return response.status(500).json({
+//       error: true,
+//       success: false,
+//       message: "Internal Server Error!",
+//     });
+//   }
+// };
+
 const userLogin = async (request, response) => {
   console.log("userLogin========>>", request.body);
   const { email, password, name, verificationFrom } = request.body;
 
   if (!email || !verificationFrom) {
-    return response.status(401).json({
+    return response.status(400).json({
       error: true,
       success: false,
-      message: "Email and verificationFrom required",
+      message: "Email and verificationFrom are required",
     });
   }
 
   try {
     let user = await prisma.user_details.findFirst({
-      where: { email: email },
+      where: { email },
     });
 
+    // --- Handle Google Login ---
     if (verificationFrom === "googleAuth") {
       if (!user) {
         user = await prisma.user_details.create({
-          data: { email, password, name, created_date: istDate },
+          data: {
+            email,
+            password,
+            name,
+            created_date: istDate,
+          },
         });
       }
+      const token = jwt.sign({ id: user.id }, process.env.secret);
 
       return response.status(200).json({
         success: true,
         error: false,
         message: "Login successful",
         logged_id: user.id,
+        token,
       });
     }
 
+    // --- Handle Regular Email/Password Login ---
     if (!user) {
-      return response.status(401).json({
+      return response.status(404).json({
         error: true,
         success: false,
         message: "User not found",
@@ -149,25 +281,51 @@ const userLogin = async (request, response) => {
       });
     }
 
+    const token = jwt.sign({ id: user.id }, process.env.secret);
+    console.log("tokentokentoken", token);
     return response.status(200).json({
       success: true,
       error: false,
       message: "Login successful",
       logged_id: user.id,
+      token,
     });
   } catch (error) {
-    console.log("errr", error);
+    console.error("Login Error:", error);
     return response.status(500).json({
       error: true,
       success: false,
-      message: "Internal Server Error!",
+      message: "Internal Server Error",
     });
   }
 };
 
 const getUserById = async (req, res) => {
-  const { id } = req.params;
-  console.log("iddddd", id);
+  console.log("reeeee", req.headers);
+  const token = req.headers.token;
+
+  if (!token) {
+    return res.status(401).json({
+      success: false,
+      message: "No token provided",
+      resetToken: 1,
+    });
+  }
+
+  let decoded;
+  try {
+    decoded = await verifyToken(token);
+  } catch (err) {
+    logger.error(`Token verification failed: ${err}`);
+    return res.status(401).json({
+      success: false,
+      message: "Unauthorized user",
+      Error: err,
+      resetToken: 1,
+    });
+  }
+
+  const id = decoded.id;
   try {
     const user = await prisma.user_details.findUnique({
       where: { id: parseInt(id) },

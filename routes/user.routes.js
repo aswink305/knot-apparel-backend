@@ -9,6 +9,6 @@ const UserRouter = express.Router();
 
 UserRouter.route("/addusers").post(addUsers);
 UserRouter.post("/login", userLogin);
-UserRouter.get("/getUserById/:id", getUserById);
+UserRouter.get("/getUserById", getUserById);
 
 module.exports = UserRouter;
