@@ -20,8 +20,11 @@ datasource db {
     address                 Json?
     updatedDate             DateTime?
     status                  String?
-    image                   String?   
+    image                   String?  
+    role                    String? 
     created_date            DateTime? 
+    customer_wish_list      customer_wish_list[]
+    customer_cart           customer_cart[]
    
   }
 
@@ -29,13 +32,34 @@ model product_master {
   product_id        Int      @id(map: "PRODUCT_MASTER_pkey") @default(autoincrement())
   product_code      String?  @unique(map: "product_code_unique") @db.VarChar
   product_name      String?  @db.VarChar
-  product_desc      String?  @db.VarChar
+  description       String?  @db.VarChar
   product_type      String?  @db.VarChar 
   created_date      DateTime? @db.Timestamp(6)
   updated_date      DateTime? @db.Timestamp(6)
+  price             String?  @db.VarChar
+  size              String?  @db.VarChar
   color             String?  @db.VarChar
-  images            String?  @db.VarChar
+  image             String?  @db.VarChar
+  customer_cart     customer_cart[]
+  customer_wish_list customer_wish_list[]
 }
 
+
+model customer_cart {
+  id             Int            @id @default(autoincrement())
+  customer_id    Int
+  product_id     Int
+  quantity       Int
+  user_details   user_details   @relation(fields: [customer_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "customer_cart_user_fkey")
+  product_master product_master @relation(fields: [product_id], references: [product_id], onDelete: NoAction, onUpdate: NoAction, map: "customer_cart_product_fkey")
+}
+
+model customer_wish_list {
+  id             Int            @id @default(autoincrement())
+  customer_id    Int
+  product_id     Int
+  user_details   user_details   @relation(fields: [customer_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "wish_list_user_fkey")
+  product_master product_master @relation(fields: [product_id], references: [product_id], onDelete: NoAction, onUpdate: NoAction, map: "wish_list_product_fkey")
+}
 
  

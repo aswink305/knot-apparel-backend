@@ -226,13 +226,13 @@ const addUsers = async (request, response) => {
 
 const userLogin = async (request, response) => {
   console.log("userLogin========>>", request.body);
-  const { email, password, name, verificationFrom } = request.body;
+  const { email, password, name, verificationFrom ,role} = request.body;
 
-  if (!email || !verificationFrom) {
+  if (!email ) {
     return response.status(400).json({
       error: true,
       success: false,
-      message: "Email and verificationFrom are required",
+      message: "Email  are required",
     });
   }
 
@@ -249,6 +249,7 @@ const userLogin = async (request, response) => {
             email,
             password,
             name,
+            role,
             created_date: istDate,
           },
         });
@@ -354,8 +355,437 @@ const getUserById = async (req, res) => {
   }
 };
 
+const customerWishList = async (req, res) => {
+  const token = req.headers.authorization;
+
+  if (!token) {
+    return res.status(401).json({
+      success: false,
+      message: "No token provided",
+      resetToken: 1,
+    });
+  }
+
+  let decoded;
+  try {
+    decoded = await verifyToken(token);
+  } catch (err) {
+    logger.error(`Token verification failed: ${err}`);
+    return res.status(401).json({
+      success: false,
+      message: "Unauthorized user",
+      Error: err,
+      resetToken: 1,
+    });
+  }
+
+  const logged_id = decoded.id;
+  const { prod_id } = req.body;
+  try {
+    if (!logged_id || !prod_id) {
+      logger.error(
+        "customer_id or prod_id is undefined in customerWishList api"
+      );
+      return res.send("invalid request");
+    }
+
+    await prisma.customer_wish_list.create({
+      data: {
+        customer_id: logged_id,
+        prod_id: prod_id,
+      },
+    });
+    res.status(201).json({
+      success: true,
+      message: "successfully wishlisted",
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({
+      message: "internal server error",
+    });
+    logger.error(
+      `Internal server error: ${error.message} in customer- customerwishlist api`
+    );
+  } finally {
+    await prisma.$disconnect();
+  }
+};
+
+const getCustomerWishList = async (req, res) => {
+  const token = req.headers.authorization;
+
+  if (!token) {
+    return res.status(401).json({
+      success: false,
+      message: "No token provided",
+      resetToken: 1,
+    });
+  }
+
+  let decoded;
+  try {
+    decoded = await verifyToken(token);
+  } catch (err) {
+    logger.error(`Token verification failed: ${err}`);
+    return res.status(401).json({
+      success: false,
+      message: "Unauthorized user",
+      Error: err,
+      resetToken: 1,
+    });
+  }
+
+  const logged_id = decoded.id;
+
+  try {
+    const response = await prisma.customer_wish_list.findMany({
+      where: {
+        customer_id: logged_id,
+      },
+      include: {
+        product_master: {
+          select: {
+            product_name: true,
+            product_id: true,
+            color: true,
+            product_type: true,
+            product_desc: true,
+            images: true,
+          },
+        },
+      },
+    });
+
+    const extractedResponse = response.map((item) => {
+      const {
+        product_name,
+        product_id,
+        color,
+        product_type,
+        product_desc,
+        images,
+      } = item.product_master;
+
+      return {
+        product_name,
+        product_id,
+        color,
+        product_type,
+        product_desc,
+        images,
+      };
+    });
+
+    return res.status(200).json({
+      success: true,
+      data: extractedResponse,
+    });
+  } catch (error) {
+    logger.error(
+      `Internal server error: ${error.message} in getCustomerWishList API`
+    );
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    });
+  }
+};
+
+const removeFromWishList = async (req, res) => {
+  const { prod_id } = req.body;
+  const token = req.headers.authorization;
+
+  if (!token) {
+    return res.status(401).json({
+      success: false,
+      message: "No token provided",
+      resetToken: 1,
+    });
+  }
+
+  let decoded;
+  try {
+    decoded = await verifyToken(token);
+  } catch (err) {
+    logger.error(`Token verification failed: ${err}`);
+    return res.status(401).json({
+      success: false,
+      message: "Unauthorized user",
+      Error: err,
+      resetToken: 1,
+    });
+  }
+
+  const customer_id = decoded.id;
+
+  if (!customer_id || !prod_id) {
+    logger.error(
+      "customer_id or prod_id is undefined in customer-removeFromWishList api"
+    );
+    return res.status(400).json({
+      error: true,
+      message: "invalid request",
+    });
+  }
+  try {
+    const deletedItem = await prisma.customer_wish_list.deleteMany({
+      where: {
+        customer_id: customer_id,
+        prod_id: prod_id,
+      },
+    });
+    if (deletedItem.count === 1) {
+      res.status(200).json({
+        success: true,
+        message: "successfully removed product ",
+      });
+    } else {
+      logger.error("invalid data in removeFromWishList api");
+      res.status(400).json({
+        error: true,
+        message: "invalid data",
+      });
+    }
+  } catch (error) {
+    res.status(500).json({
+      error: "internal server error",
+    });
+    logger.error(
+      `Internal server error: ${error.message} in customer- removewishlist api`
+    );
+  } finally {
+    await prisma.$disconnect();
+  }
+};
+
+const addToCart = async (req, res) => {
+  const { prod_id, quantity } = req.body;
+
+  try {
+    const token = req.headers.authorization;
+
+    if (!token) {
+      return res.status(401).json({
+        success: false,
+        message: "No token provided",
+        resetToken: 1,
+      });
+    }
+
+    let decoded;
+    try {
+      decoded = await verifyToken(token);
+    } catch (err) {
+      logger.error(`Token verification failed: ${err}`);
+      return res.status(401).json({
+        success: false,
+        message: "Unauthorized user",
+        Error: err,
+        resetToken: 1,
+      });
+    }
+
+    const customer_id = decoded.id;
+    if (!customer_id || !prod_id || !quantity) {
+      logger.error(
+        "customer_id or prod_id or quantity is undefined in addToCart api"
+      );
+
+      return res.status(400).json({
+        error: true,
+        message: "invalid request",
+      });
+    }
+    const addcart = await prisma.customer_cart.findFirst({
+      where: {
+        customer_id: customer_id,
+        product_id: prod_id,
+      },
+    });
+    if (addcart) {
+      res.status(400).json({
+        message: "product already in cart",
+      });
+    } else {
+      const response = await prisma.customer_cart.create({
+        data: {
+          customer_id: customer_id,
+          product_id: prod_id,
+          quantity: parseInt(quantity),
+        },
+      });
+      ////////////notification//////////
+      res.status(201).json({
+        success: true,
+        message: "successfully added to cart",
+      });
+    }
+  } catch (error) {
+    res.status(500).json({
+      error: "internal server error",
+    });
+    logger.error(
+      `Internal server error: ${error.message} in customer- addtocart api`
+    );
+  } finally {
+    await prisma.$disconnect();
+  }
+};
+
+const getCart = async (req, res) => {
+  const token = req.headers.authorization;
+
+  if (!token) {
+    return res.status(401).json({
+      success: false,
+      message: "No token provided",
+      resetToken: 1,
+    });
+  }
+
+  let decoded;
+  try {
+    decoded = await verifyToken(token);
+  } catch (err) {
+    logger.error(`Token verification failed: ${err}`);
+    return res.status(401).json({
+      success: false,
+      message: "Unauthorized user",
+      error: err,
+      resetToken: 1,
+    });
+  }
+
+  const customer_id = decoded.id;
+
+  if (!customer_id) {
+    logger.error("customer_id undefined in getCart API");
+    return res.status(400).json({
+      success: false,
+      message: "Invalid customer ID",
+    });
+  }
+
+  try {
+    const response = await prisma.customer_cart.findMany({
+      where: {
+        customer_id: customer_id,
+      },
+      select: {
+        quantity: true,
+        product_master: {
+          select: {
+            product_name: true,
+            product_id: true,
+            product_desc: true,
+            product_code: true,
+            product_type: true,
+            color: true,
+          },
+        },
+      },
+    });
+
+    const extractedResponse = response.map((item) => {
+      const {
+        product_name,
+        product_id,
+        color,
+        product_desc,
+        product_code,
+        product_type,
+      } = item.product_master;
+
+      return {
+        product_name,
+        product_id,
+        color,
+        product_desc,
+        product_code,
+        product_type,
+        quantity: item.quantity,
+      };
+    });
+
+    return res.status(200).json({
+      success: true,
+      data: extractedResponse,
+    });
+  } catch (error) {
+    logger.error(`Internal server error: ${error.message} in getCart API`);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    });
+  }
+};
+
+const removeFromCart = async (req, res) => {
+  const { prod_id } = req.body;
+
+  const token = req.headers.authorization;
+
+  if (!token) {
+    return res.status(401).json({
+      success: false,
+      message: "No token provided",
+      resetToken: 1,
+    });
+  }
+
+  let decoded;
+  try {
+    decoded = await verifyToken(token);
+  } catch (err) {
+    logger.error(`Token verification failed: ${err}`);
+    return res.status(401).json({
+      success: false,
+      message: "Unauthorized user",
+      Error: err,
+      resetToken: 1,
+    });
+  }
+
+  const customer_id = decoded.id;
+  if (!customer_id || !prod_id) {
+    logger.error("customer_id or prod_id undefined in removefromCart api");
+    return res.status(400).json({
+      error: true,
+      message: "invalid request",
+    });
+  }
+  try {
+    await prisma.customer_cart.deleteMany({
+      where: {
+        customer_id: customer_id,
+        product_id: parseInt(prod_id),
+      },
+    });
+    res.status(200).json({
+      success: true,
+      message: "successfully deleted",
+    });
+  } catch (error) {
+    res.status(500).json({
+      error: "internal server error",
+    });
+    logger.error(
+      `Internal server error: ${error.message} in customer-removefromcart api`
+    );
+  } finally {
+    await prisma.$disconnect();
+  }
+};
+
 module.exports = {
   userLogin,
   addUsers,
   getUserById,
+  removeFromCart,
+  getCart,
+  addToCart,
+  removeFromWishList,
+  getCustomerWishList,
+  customerWishList
 };
