@@ -226,9 +226,9 @@ const addUsers = async (request, response) => {
 
 const userLogin = async (request, response) => {
   console.log("userLogin========>>", request.body);
-  const { email, password, name, verificationFrom ,role} = request.body;
+  const { email, password, name, verificationFrom, role } = request.body;
 
-  if (!email ) {
+  if (!email) {
     return response.status(400).json({
       error: true,
       success: false,
@@ -262,6 +262,7 @@ const userLogin = async (request, response) => {
         message: "Login successful",
         logged_id: user.id,
         token,
+        role: user?.role
       });
     }
 
@@ -290,6 +291,7 @@ const userLogin = async (request, response) => {
       message: "Login successful",
       logged_id: user.id,
       token,
+      role: user?.role
     });
   } catch (error) {
     console.error("Login Error:", error);
