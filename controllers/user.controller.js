@@ -452,41 +452,25 @@ const getCustomerWishList = async (req, res) => {
   try {
     const getdata = await prisma.customer_wish_list.findMany({
       where: {
-        user_details: {
-          id: logged_id,
-        },
+        customer_id: logged_id,
       },
       include: {
         product_master: {
           select: {
             product_name: true,
             product_id: true,
-            color: true,
-
-            product_desc: true,
-            images: true,
+            description:true,
+            price:true,
+            size:true
           },
         },
       },
     });
     console.log("getdatagetdata", getdata);
-    const extractedResponse = getdata.map((item) => {
-      const { product_name, product_id, color, product_desc, images } =
-        item.product_master;
-
-      return {
-        product_name,
-        product_id,
-        color,
-
-        product_desc,
-        images,
-      };
-    });
 
     return res.status(200).json({
       success: true,
-      data: extractedResponse,
+      data: getdata,
     });
   } catch (error) {
     logger.error(
