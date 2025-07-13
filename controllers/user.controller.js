@@ -262,7 +262,7 @@ const userLogin = async (request, response) => {
         message: "Login successful",
         logged_id: user.id,
         token,
-        role: user?.role
+        role: user?.role,
       });
     }
 
@@ -291,7 +291,7 @@ const userLogin = async (request, response) => {
       message: "Login successful",
       logged_id: user.id,
       token,
-      role: user?.role
+      role: user?.role,
     });
   } catch (error) {
     console.error("Login Error:", error);
@@ -382,6 +382,7 @@ const customerWishList = async (req, res) => {
   }
 
   const logged_id = decoded.id;
+
   const { prod_id } = req.body;
   try {
     if (!logged_id || !prod_id) {
@@ -393,8 +394,16 @@ const customerWishList = async (req, res) => {
 
     await prisma.customer_wish_list.create({
       data: {
-        customer_id: logged_id,
-        prod_id: prod_id,
+        user_details: {
+          connect: {
+            id: 3,
+          },
+        },
+        product_master: {
+          connect: {
+            product_id: 1,
+          },
+        },
       },
     });
     res.status(201).json({
@@ -439,11 +448,13 @@ const getCustomerWishList = async (req, res) => {
   }
 
   const logged_id = decoded.id;
-
+  console.log("logged_id", logged_id);
   try {
-    const response = await prisma.customer_wish_list.findMany({
+    const getdata = await prisma.customer_wish_list.findMany({
       where: {
-        customer_id: logged_id,
+        user_details: {
+          id: logged_id,
+        },
       },
       include: {
         product_master: {
@@ -451,29 +462,23 @@ const getCustomerWishList = async (req, res) => {
             product_name: true,
             product_id: true,
             color: true,
-            product_type: true,
+
             product_desc: true,
             images: true,
           },
         },
       },
     });
-
-    const extractedResponse = response.map((item) => {
-      const {
-        product_name,
-        product_id,
-        color,
-        product_type,
-        product_desc,
-        images,
-      } = item.product_master;
+    console.log("getdatagetdata", getdata);
+    const extractedResponse = getdata.map((item) => {
+      const { product_name, product_id, color, product_desc, images } =
+        item.product_master;
 
       return {
         product_name,
         product_id,
         color,
-        product_type,
+
         product_desc,
         images,
       };
@@ -789,5 +794,5 @@ module.exports = {
   addToCart,
   removeFromWishList,
   getCustomerWishList,
-  customerWishList
+  customerWishList,
 };
