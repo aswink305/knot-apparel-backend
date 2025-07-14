@@ -391,17 +391,30 @@ const customerWishList = async (req, res) => {
       );
       return res.send("invalid request");
     }
-
+    // Check if already in wishlist
+    const existingWish = await prisma.customer_wish_list.findMany({
+      where: {
+        user_details: { id: logged_id },
+        product_master: { product_id: prod_id },
+      },
+    });
+    console.log("existingWish", existingWish);
+    if (existingWish.length > 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Already in wishlist",
+      });
+    }
     await prisma.customer_wish_list.create({
       data: {
         user_details: {
           connect: {
-            id: 3,
+            id: logged_id,
           },
         },
         product_master: {
           connect: {
-            product_id: 1,
+            product_id: prod_id,
           },
         },
       },
@@ -459,9 +472,9 @@ const getCustomerWishList = async (req, res) => {
           select: {
             product_name: true,
             product_id: true,
-            description:true,
-            price:true,
-            size:true
+            description: true,
+            price: true,
+            size: true,
           },
         },
       },
