@@ -382,8 +382,8 @@ const customerWishList = async (req, res) => {
   }
 
   const logged_id = decoded.id;
-
   const { prod_id } = req.body;
+
   try {
     if (!logged_id || !prod_id) {
       logger.error(
@@ -391,46 +391,51 @@ const customerWishList = async (req, res) => {
       );
       return res.send("invalid request");
     }
-    // Check if already in wishlist
+
     const existingWish = await prisma.customer_wish_list.findMany({
       where: {
         user_details: { id: logged_id },
         product_master: { product_id: prod_id },
       },
     });
+
     console.log("existingWish", existingWish);
+
     if (existingWish.length > 0) {
-      return res.status(400).json({
-        success: false,
-        message: "Already in wishlist",
+      const deletedItem = await prisma.customer_wish_list.deleteMany({
+        where: {
+          user_details: { id: logged_id },
+          product_master: { product_id: prod_id },
+        },
       });
+
+      if (deletedItem.count >= 1) {
+        return res.status(200).json({
+          success: true,
+          message: "successfully removed from wishlist",
+        });
+      }
     }
+
     await prisma.customer_wish_list.create({
       data: {
-        user_details: {
-          connect: {
-            id: logged_id,
-          },
-        },
-        product_master: {
-          connect: {
-            product_id: prod_id,
-          },
-        },
+        user_details: { connect: { id: logged_id } },
+        product_master: { connect: { product_id: prod_id } },
       },
     });
-    res.status(201).json({
+
+    return res.status(201).json({
       success: true,
       message: "successfully wishlisted",
     });
   } catch (error) {
     console.log(error);
-    res.status(500).json({
-      message: "internal server error",
-    });
     logger.error(
       `Internal server error: ${error.message} in customer- customerwishlist api`
     );
+    return res.status(500).json({
+      message: "internal server error",
+    });
   } finally {
     await prisma.$disconnect();
   }
