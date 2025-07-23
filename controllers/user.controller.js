@@ -569,6 +569,7 @@ const removeFromWishList = async (req, res) => {
 };
 
 const addToCart = async (req, res) => {
+  console.log("reeeeeeee", req.body);
   const { prod_id, quantity } = req.body;
 
   try {
@@ -596,47 +597,59 @@ const addToCart = async (req, res) => {
     }
 
     const customer_id = decoded.id;
-    if (!customer_id || !prod_id || !quantity) {
-      logger.error(
-        "customer_id or prod_id or quantity is undefined in addToCart api"
-      );
 
+    // 🛠 Validate inputs
+    if (!customer_id || !prod_id || !quantity || isNaN(quantity)) {
+      logger.error("Invalid inputs in addToCart API");
       return res.status(400).json({
-        error: true,
-        message: "invalid request",
+        success: false,
+        message: "Invalid request data",
       });
     }
-    const addcart = await prisma.customer_cart.findFirst({
+
+    // ✅ FIX: Use actual column names from model (`customer_id`, `product_id`)
+    const existingCartItem = await prisma.customer_cart.findFirst({
       where: {
         customer_id: customer_id,
         product_id: prod_id,
       },
     });
-    if (addcart) {
-      res.status(400).json({
-        message: "product already in cart",
-      });
-    } else {
-      const response = await prisma.customer_cart.create({
+
+    if (existingCartItem) {
+      const updated = await prisma.customer_cart.update({
+        where: {
+          id: existingCartItem.id, // ✅ Use unique ID
+        },
         data: {
-          customer_id: customer_id,
-          product_id: prod_id,
-          quantity: parseInt(quantity),
+          quantity: existingCartItem.quantity + parseInt(quantity), // ✅ Increase quantity
         },
       });
-      ////////////notification//////////
-      res.status(201).json({
-        success: true,
-        message: "successfully added to cart",
+      return res.status(200).json({
+        success: false,
+        message: "Product added in cart",
       });
     }
-  } catch (error) {
-    res.status(500).json({
-      error: "internal server error",
+
+    const created = await prisma.customer_cart.create({
+      data: {
+        customer_id: customer_id,
+        product_id: prod_id,
+        quantity: parseInt(quantity),
+      },
     });
-    logger.error(
-      `Internal server error: ${error.message} in customer- addtocart api`
-    );
+
+    return res.status(201).json({
+      success: true,
+      message: "Successfully added to cart",
+      data: created,
+    });
+  } catch (error) {
+    logger.error(`Internal server error: ${error.message} in addToCart API`);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error",
+      error: error.message,
+    });
   } finally {
     await prisma.$disconnect();
   }
