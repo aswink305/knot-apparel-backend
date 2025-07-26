@@ -621,7 +621,7 @@ const addToCart = async (req, res) => {
           id: existingCartItem.id, // ✅ Use unique ID
         },
         data: {
-          quantity: existingCartItem.quantity + parseInt(quantity), // ✅ Increase quantity
+          quantity: existingCartItem.quantity + parseInt(quantity),
         },
       });
       return res.status(200).json({
@@ -674,68 +674,39 @@ const getCart = async (req, res) => {
     return res.status(401).json({
       success: false,
       message: "Unauthorized user",
-      error: err,
+      Error: err,
       resetToken: 1,
     });
   }
 
-  const customer_id = decoded.id;
-
-  if (!customer_id) {
-    logger.error("customer_id undefined in getCart API");
-    return res.status(400).json({
-      success: false,
-      message: "Invalid customer ID",
-    });
-  }
-
+  const logged_id = decoded.id;
+  console.log("logged_id", logged_id);
   try {
-    const response = await prisma.customer_cart.findMany({
+    const getdata = await prisma.customer_cart.findMany({
       where: {
-        customer_id: customer_id,
+        customer_id: logged_id,
       },
-      select: {
-        quantity: true,
+      include: {
         product_master: {
           select: {
             product_name: true,
             product_id: true,
-            product_desc: true,
-            product_code: true,
-            product_type: true,
-            color: true,
+            description: true,
+            price: true,
+            size: true,
           },
         },
       },
     });
 
-    const extractedResponse = response.map((item) => {
-      const {
-        product_name,
-        product_id,
-        color,
-        product_desc,
-        product_code,
-        product_type,
-      } = item.product_master;
-
-      return {
-        product_name,
-        product_id,
-        color,
-        product_desc,
-        product_code,
-        product_type,
-        quantity: item.quantity,
-      };
-    });
-
     return res.status(200).json({
       success: true,
-      data: extractedResponse,
+      data: getdata,
     });
   } catch (error) {
-    logger.error(`Internal server error: ${error.message} in getCart API`);
+    logger.error(
+      `Internal server error: ${error.message} in getCustomerWishList API`
+    );
     return res.status(500).json({
       success: false,
       message: "Internal server error",
