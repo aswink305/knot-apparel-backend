@@ -1,4 +1,5 @@
-const {prisma} = require("../utils")
+const { request } = require("express");
+const { prisma } = require("../utils")
 require("dotenv").config();
 
 const addNewProduct = async (request, response) => {
@@ -7,7 +8,7 @@ const addNewProduct = async (request, response) => {
   try {
     const {
       product_name,
-      image, 
+      image,
       description,
       price,
       size,
@@ -15,20 +16,20 @@ const addNewProduct = async (request, response) => {
       product_type
     } = request.body;
 
-  
+
     if (!product_name) return response.status(400).json("Product Name cannot be blank");
     if (!product_type)
       return response.status(400).json("Please choose product type");
 
     const lastProduct = await prisma.product_master.findFirst({
       orderBy: {
-        product_code: 'desc' 
+        product_code: 'desc'
       },
       select: {
         product_code: true
       }
     });
-     let nextNumber = 1;
+    let nextNumber = 1;
     if (lastProduct && lastProduct.product_code) {
       const lastNumber = parseInt(lastProduct.product_code.slice(1), 10);
       if (!isNaN(lastNumber)) {
@@ -52,7 +53,7 @@ const addNewProduct = async (request, response) => {
         updated_date: now,
       },
     });
-    console.log("newProduct----",newProduct)
+    console.log("newProduct----", newProduct)
     response
       .status(201)
       .json(`${product_name} added to the Product master successfully.`);
@@ -69,13 +70,13 @@ const deleteProduct = async (request, response) => {
 
   try {
     const {
-     product_id
+      product_id
     } = request.body;
 
-  
+
     if (!product_id) return response.status(400).json("Product id cannot be null");
 
-      const productToDelete = await prisma.product_master.findUnique({
+    const productToDelete = await prisma.product_master.findUnique({
       where: {
         product_id,
       },
@@ -88,11 +89,11 @@ const deleteProduct = async (request, response) => {
       return response.status(404).json("Product not found");
     }
     const deleteProduct = await prisma.product_master.delete({
-     where:{
-      product_id
-     }
+      where: {
+        product_id
+      }
     });
-    console.log("deleteProduct----",deleteProduct)
+    console.log("deleteProduct----", deleteProduct)
     response
       .status(201)
       .json(`${productToDelete.product_name} deleted successfully`);
@@ -111,7 +112,7 @@ const updateProduct = async (request, response) => {
     const {
       product_id,
       product_name,
-      image, 
+      image,
       description,
       price,
       size,
@@ -119,14 +120,14 @@ const updateProduct = async (request, response) => {
       product_type
     } = request.body;
 
-  
+
     if (!product_id) return response.status(400).json("Product id cannot be null");
-   
+
     const now = new Date();
     const findProduct = await prisma.product_master.findFirst({
-     where:{
-      product_id
-     },
+      where: {
+        product_id
+      },
       select: {
         product_name: true,
       }
@@ -134,13 +135,13 @@ const updateProduct = async (request, response) => {
     if (!findProduct) {
       return response.status(404).json("Product not found");
     }
-     
+
     const updateProduct = await prisma.product_master.update({
-      where:{
+      where: {
         product_id
       },
       data: {
-       product_name,
+        product_name,
         description,
         product_type,
         price,
@@ -150,7 +151,7 @@ const updateProduct = async (request, response) => {
         updated_date: now,
       },
     });
-    console.log("newProduct----",updateProduct)
+    console.log("newProduct----", updateProduct)
     response
       .status(201)
       .json(`${findProduct.product_name} updated successfully.`);
@@ -167,27 +168,27 @@ const productDetails = async (request, response) => {
 
   try {
     const {
-     product_id
+      product_id
     } = request.body;
 
-  
+
     if (!product_id) return response.status(400).json("Product id cannot be null");
 
-      const getProductDetails = await prisma.product_master.findUnique({
+    const getProductDetails = await prisma.product_master.findUnique({
       where: {
         product_id,
       }
-     
+
     });
 
     if (!getProductDetails) {
       return response.status(404).json("Product not found");
     }
-    
+
     response.status(201).json({
-      success:true,
-      message:"Succesfully fetched product details",
-      data:getProductDetails
+      success: true,
+      message: "Succesfully fetched product details",
+      data: getProductDetails
     });
 
   } catch (err) {
@@ -198,6 +199,66 @@ const productDetails = async (request, response) => {
   }
 }
 
+const getUserDetails = async (request, response) => {
+  try {
+    const userData = await prisma.user_details.findMany({
+      orderBy: {
+        created_date: "desc",
+      },
+    });
+
+    response.status(200).json({
+      success: true,
+      error: false,
+      data: userData,
+    });
+  } catch (err) {
+    console.error("Error in userData:", err.message);
+    response.status(500).json("Internal Server Error");
+  } finally {
+    await prisma.$disconnect();
+  }
+}
+
+const getCustomerOrder = async (request, response) => {
+  try {
+    const orderDetails = await prisma.customer_cart.findMany();
+
+    const orders = [];
+
+    for (const order of orderDetails) {
+      const customer = await prisma.user_details.findUnique({
+        where: {
+          id: order.customer_id,
+        },
+      });
+
+      const product = await prisma.product_master.findUnique({
+        where: {
+          product_id: order.product_id,
+        },
+      });
+
+      orders.push({
+        id: order.id,
+        customer: customer ? customer : {},
+        product: product ? product : {},
+        quantity: order.quantity,
+      });
+    }
+
+    response.status(200).json({
+      success: true,
+      error: false,
+      data: orders,
+    });
+  } catch (err) {
+    console.error("Error while finding order details:", err.message);
+    response.status(500).json("Internal Server Error");
+  } finally {
+    await prisma.$disconnect();
+  }
+};
 
 
 
@@ -211,4 +272,5 @@ const productDetails = async (request, response) => {
 
 
 
-module.exports = {addNewProduct,deleteProduct,updateProduct,productDetails}
+
+module.exports = { addNewProduct, deleteProduct, updateProduct, productDetails,getUserDetails,getCustomerOrder }
