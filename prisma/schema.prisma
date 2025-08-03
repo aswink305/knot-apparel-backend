@@ -25,7 +25,7 @@ datasource db {
     created_date            DateTime? 
     customer_wish_list      customer_wish_list[]
     customer_cart           customer_cart[]
-   
+    sales_orders  sales_order[] 
   }
 
 model product_master {
@@ -42,6 +42,7 @@ model product_master {
   image             String?  @db.VarChar
   customer_cart     customer_cart[]
   customer_wish_list customer_wish_list[]
+  sales_lists  sales_list[]
 }
 
 
@@ -62,4 +63,26 @@ model customer_wish_list {
   product_master product_master @relation(fields: [product_id], references: [product_id], onDelete: NoAction, onUpdate: NoAction, map: "wish_list_product_fkey")
 }
 
- 
+ model sales_list {
+  id              Int               @id @default(autoincrement())
+  so_number       Int?
+  product_id      Int?
+  order_qty       Int?
+  sales_price     Int?
+  created_date    DateTime?         @db.Timestamp(6) 
+  sales_order     sales_order?  @relation(fields: [so_number], references: [sales_id], onDelete: NoAction, onUpdate: NoAction, map: "so_number")
+  product_master  product_master? @relation(fields: [product_id], references: [product_id], onDelete: NoAction, onUpdate: NoAction, map: "wish_list_product_fkey")
+}
+
+model sales_order {
+  sales_id               Int                      @id @default(autoincrement())
+  so_number              String?                  @unique(map: "so_number") @db.VarChar
+  total_amount           Decimal?                 @db.Decimal
+  so_status              String?                  @db.VarChar
+  customer_address       String?
+  created_date           DateTime?                @db.Timestamp(6)
+  customer_id            Int?
+  sales_list             sales_list[]
+  user_details           user_details?            @relation(fields: [customer_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "customer_id")
+  
+}
