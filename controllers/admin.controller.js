@@ -13,6 +13,7 @@ const addNewProduct = async (request, response) => {
       price,
       size,
       color,
+      quantity,
       product_type
     } = request.body;
 
@@ -49,6 +50,8 @@ const addNewProduct = async (request, response) => {
         size,
         color,
         image,
+        quantity,
+        status:"Active",
         created_date: now,
         updated_date: now,
       },
@@ -88,9 +91,12 @@ const deleteProduct = async (request, response) => {
     if (!productToDelete) {
       return response.status(404).json("Product not found");
     }
-    const deleteProduct = await prisma.product_master.delete({
+    const deleteProduct = await prisma.product_master.update({
       where: {
         product_id
+      },
+      data:{
+        status:"Inactive"
       }
     });
     console.log("deleteProduct----", deleteProduct)
@@ -117,6 +123,7 @@ const updateProduct = async (request, response) => {
       price,
       size,
       color,
+      quantity,
       product_type
     } = request.body;
 
@@ -148,6 +155,7 @@ const updateProduct = async (request, response) => {
         size,
         color,
         image,
+        quantity,
         updated_date: now,
       },
     });
@@ -261,6 +269,30 @@ const getCustomerOrder = async (request, response) => {
 };
 
 
+const getDashboardCounts = async (request, response) => {
+  try {
+    const [userCount, productCount, orderCount] = await Promise.all([
+      prisma.user_details.count(),
+      prisma.product_master.count(),
+      prisma.customer_cart.count(),
+    ]);
+
+    response.status(200).json({
+      success: true,
+      error: false,
+      data: {
+        userCount,
+        productCount,
+        orderCount
+      },
+    });
+  } catch (err) {
+    console.error("Error in getDashboardCounts:", err.message);
+    response.status(500).json("Internal Server Error");
+  } finally {
+    await prisma.$disconnect();
+  }
+};
 
 
 
@@ -273,4 +305,4 @@ const getCustomerOrder = async (request, response) => {
 
 
 
-module.exports = { addNewProduct, deleteProduct, updateProduct, productDetails,getUserDetails,getCustomerOrder }
+module.exports = { addNewProduct, deleteProduct, updateProduct, productDetails,getUserDetails,getCustomerOrder,getDashboardCounts}

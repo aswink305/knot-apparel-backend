@@ -40,6 +40,8 @@ model product_master {
   size              String?  @db.VarChar
   color             String?  @db.VarChar
   image             String?  @db.VarChar
+  quantity          Int?
+  status            String?  @db.VarChar()
   customer_cart     customer_cart[]
   customer_wish_list customer_wish_list[]
   sales_lists  sales_list[]
