@@ -7,7 +7,7 @@ const AdminRouter = express.Router()
 
 
 AdminRouter.post('/addProduct',addNewProduct)
-AdminRouter.delete('/deleteProduct',deleteProduct)
+AdminRouter.delete('/deleteProduct/:product_id',deleteProduct)
 AdminRouter.put('/updateProduct',updateProduct)
 AdminRouter.post('/productDetails',productDetails)
 AdminRouter.get('/getUserDetails',getUserDetails)

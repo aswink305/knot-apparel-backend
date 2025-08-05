@@ -69,19 +69,19 @@ const addNewProduct = async (request, response) => {
 }
 
 const deleteProduct = async (request, response) => {
-  console.log("Deleting product data:", request.body);
+  console.log("Deleting product data:", request.params);
 
   try {
     const {
       product_id
-    } = request.body;
+    } = request.params;
 
-
-    if (!product_id) return response.status(400).json("Product id cannot be null");
+    const id = parseInt(product_id)
+    if (!id) return response.status(400).json("Product id cannot be null");
 
     const productToDelete = await prisma.product_master.findUnique({
       where: {
-        product_id,
+        product_id:id,
       },
       select: {
         product_name: true,
@@ -93,7 +93,7 @@ const deleteProduct = async (request, response) => {
     }
     const deleteProduct = await prisma.product_master.update({
       where: {
-        product_id
+        product_id:id
       },
       data:{
         status:"Inactive"
@@ -305,4 +305,4 @@ const getDashboardCounts = async (request, response) => {
 
 
 
-module.exports = { addNewProduct, deleteProduct, updateProduct, productDetails,getUserDetails,getCustomerOrder,getDashboardCounts}
+module.exports = { addNewProduct, deleteProduct, updateProduct, productDetails,getUserDetails,getCustomerOrder,getDashboardCounts} 
