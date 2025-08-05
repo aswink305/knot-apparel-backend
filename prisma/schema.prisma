@@ -81,7 +81,7 @@ model sales_order {
   so_number              String?                  @unique(map: "so_number") @db.VarChar
   total_amount           Decimal?                 @db.Decimal
   so_status              String?                  @db.VarChar
-  customer_address       String?
+  customer_address       Json?
   created_date           DateTime?                @db.Timestamp(6)
   customer_id            Int?
   sales_list             sales_list[]

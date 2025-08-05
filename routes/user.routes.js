@@ -9,6 +9,8 @@ const {
   removeFromWishList,
   getCustomerWishList,
   customerWishList,
+  newsalesOrder,
+  getMyOrders,
 } = require("../controllers/user.controller");
 
 const UserRouter = express.Router();
@@ -22,5 +24,7 @@ UserRouter.post("/removewishlist", removeFromWishList);
 UserRouter.post("/addtocart", addToCart);
 UserRouter.get("/getcart", getCart);
 UserRouter.post("/removefromcart", removeFromCart);
+UserRouter.post("/newsalesOrder", newsalesOrder);
+UserRouter.get("/getMyOrders", getMyOrders);
 
 module.exports = UserRouter;
