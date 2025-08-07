@@ -795,13 +795,13 @@ const newsalesOrder = async (request, response) => {
         resetToken: 1,
       });
     }
-
+    console.log("newsalesorderrrr", request.body);
     const customer_id = decoded.id;
 
     const istDate = new Date(
       new Date().toLocaleString("en-US", { timeZone: "Asia/Kolkata" })
     );
-    const currentYear = istDate.getFullYear().toString().slice(-2); 
+    const currentYear = istDate.getFullYear().toString().slice(-2);
 
     await prisma.$transaction(async (prisma) => {
       const { so_status, total_amount, products, address } = request.body;
@@ -824,24 +824,26 @@ const newsalesOrder = async (request, response) => {
           customer_id,
         },
       });
-
+      console.log("object", sales_orderdata);
       for (const product of products) {
+        console.log("productproduct", product);
         await prisma.sales_list.create({
           data: {
-            so_number: sales_orderdata.so_number,
+            so_number: sales_orderdata.id,
             product_id: product.product_id,
-            order_qty: product.order_qty,
-            sales_price: product.sales_price,
+            order_qty: parseInt(product.order_qty),
+            sales_price: parseInt(product.sales_price),
             created_date: istDate,
           },
         });
       }
     });
-
+    console.log("fhfgfhj");
     return response
       .status(200)
       .json({ success: true, message: "Sales order created successfully" });
   } catch (error) {
+    console.log("errrrrr", error);
     logger.error(`An error occurred: ${error.message} in newsalesOrder API`);
     response
       .status(500)
@@ -879,23 +881,34 @@ const getMyOrders = async (request, response) => {
 
     const orders = await prisma.sales_order.findMany({
       where: { customer_id },
-      include: {
-        sales_list: {
-          include: {
-            product_master: true, // optional: include product details
-          },
-        },
-      },
+      // include: {
+      //   sales_list: {
+      //     include: {
+      //       product_master: true,
+      //     },
+      //   },
+      // },
       orderBy: {
-        created_date: 'desc',
+        created_date: "desc",
       },
     });
+    for (const order of orders) {
+      const sales = await prisma.sales_list.findMany({
+        where: { so_number: order.id },
+        include: {
+          product_master: true,
+        },
+        orderBy: {
+          created_date: "desc",
+        },
+      });
+      order.sales_list = sales;
+    }
 
     return response.status(200).json({
       success: true,
       orders,
     });
-
   } catch (error) {
     logger.error(`An error occurred in getMyOrders: ${error.message}`);
     return response.status(500).json({
@@ -906,7 +919,6 @@ const getMyOrders = async (request, response) => {
     await prisma.$disconnect();
   }
 };
-
 
 module.exports = {
   userLogin,
@@ -919,5 +931,5 @@ module.exports = {
   getCustomerWishList,
   customerWishList,
   newsalesOrder,
-  getMyOrders
+  getMyOrders,
 };
