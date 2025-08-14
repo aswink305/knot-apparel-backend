@@ -621,7 +621,7 @@ const addToCart = async (req, res) => {
           id: existingCartItem.id, // ✅ Use unique ID
         },
         data: {
-          quantity: existingCartItem.quantity + parseInt(quantity),
+          quantity:  parseInt(quantity),
         },
       });
       return res.status(200).json({
