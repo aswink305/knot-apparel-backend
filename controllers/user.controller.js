@@ -621,7 +621,7 @@ const addToCart = async (req, res) => {
           id: existingCartItem.id, // ✅ Use unique ID
         },
         data: {
-          quantity:  parseInt(quantity),
+          quantity: parseInt(quantity),
         },
       });
       return res.status(200).json({
@@ -920,6 +920,192 @@ const getMyOrders = async (request, response) => {
   }
 };
 
+const addaddress = async (request, response) => {
+  try {
+    const token = request.headers.authorization;
+
+    if (!token) {
+      return response.status(401).json({
+        success: false,
+        message: "No token provided",
+        resetToken: 1,
+      });
+    }
+
+    let decoded;
+    try {
+      decoded = await verifyToken(token);
+    } catch (err) {
+      logger.error(`Token verification failed: ${err}`);
+      return response.status(401).json({
+        success: false,
+        message: "Unauthorized user",
+        resetToken: 1,
+      });
+    }
+
+    const customer_id = decoded.id;
+   
+    const { address, city, state, land_mark, contact_number, pincode ,default_flag } =
+      request.body;
+    if (!customer_id) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Customer ID is required" });
+    }
+    const newAddress = await prisma.customer_address.create({
+      data: {
+        customer_id,
+        address: address || null,
+        city: city || null,
+        state: state || null,
+        land_mark: land_mark || null,
+        contact_number: contact_number || null,
+        pincode: pincode || null,
+        default:default_flag,
+        created_date:istDate
+      },
+    });
+ console.log("addadressss",newAddress)
+    return response.status(201).json({
+      success: true,
+      message: "Customer address added successfully",
+      data: newAddress,
+    });
+  } catch (error) {
+    logger.error(`An error occurred in getMyOrders: ${error.message}`);
+    return response.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  } finally {
+    await prisma.$disconnect();
+  }
+};
+
+const getalladdress = async (request, response) => {
+  try {
+    const token = request.headers.authorization;
+
+    if (!token) {
+      return response.status(401).json({
+        success: false,
+        message: "No token provided",
+        resetToken: 1,
+      });
+    }
+
+    let decoded;
+    try {
+      decoded = await verifyToken(token);
+    } catch (err) {
+      logger.error(`Token verification failed: ${err}`);
+      return response.status(401).json({
+        success: false,
+        message: "Unauthorized user",
+        resetToken: 1,
+      });
+    }
+
+    const customer_id = decoded.id;
+
+    const alldata = await prisma.customer_address.findMany({
+      where: { customer_id },
+      // orderBy: {
+      //   created_date: "desc",
+      // },
+    });
+
+    return response.status(200).json({
+      success: true,
+      data: alldata,
+    });
+  } catch (error) {
+    logger.error(`An error occurred in getMyOrders: ${error.message}`);
+    return response.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  } finally {
+    await prisma.$disconnect();
+  }
+};
+
+const editAddress = async (req, res) => {
+  try {
+    const token = req.headers.authorization;
+
+    if (!token) {
+      return res.status(401).json({
+        success: false,
+        message: "No token provided",
+        resetToken: 1,
+      });
+    }
+
+    let decoded;
+    try {
+      decoded = await verifyToken(token);
+    } catch (err) {
+      logger.error(`Token verification failed: ${err}`);
+      return res.status(401).json({
+        success: false,
+        message: "Unauthorized user",
+        resetToken: 1,
+      });
+    }
+
+    const customer_id = decoded.id;
+    const { id, address, city, state, land_mark, contact_number, pincode } = req.body;
+
+    if (!id) {
+      return res.status(400).json({
+        success: false,
+        message: "Address ID is required for update",
+      });
+    }
+
+    // Check if address belongs to this customer
+    const existingAddress = await prisma.customer_address.findFirst({
+      where: { id: id, customer_id: customer_id },
+    });
+
+    if (!existingAddress) {
+      return res.status(404).json({
+        success: false,
+        message: "Address not found or does not belong to the customer",
+      });
+    }
+
+    const updatedAddress = await prisma.customer_address.update({
+      where: { id: id },
+      data: {
+        address: address || existingAddress.address,
+        city: city || existingAddress.city,
+        state: state || existingAddress.state,
+        land_mark: land_mark || existingAddress.land_mark,
+        contact_number: contact_number || existingAddress.contact_number,
+        pincode: pincode || existingAddress.pincode,
+      },
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: "Customer address updated successfully",
+      data: updatedAddress,
+    });
+
+  } catch (error) {
+    logger.error(`An error occurred in editAddress: ${error.message}`);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    });
+  } finally {
+    await prisma.$disconnect();
+  }
+};
+
 module.exports = {
   userLogin,
   addUsers,
@@ -932,4 +1118,7 @@ module.exports = {
   customerWishList,
   newsalesOrder,
   getMyOrders,
+  addaddress,
+  getalladdress,
+  editAddress
 };

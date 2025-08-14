@@ -11,6 +11,9 @@ const {
   customerWishList,
   newsalesOrder,
   getMyOrders,
+  addaddress,
+  getalladdress,
+  editAddress,
 } = require("../controllers/user.controller");
 
 const UserRouter = express.Router();
@@ -26,5 +29,8 @@ UserRouter.get("/getcart", getCart);
 UserRouter.post("/removefromcart", removeFromCart);
 UserRouter.post("/newsalesOrder", newsalesOrder);
 UserRouter.get("/getMyOrders", getMyOrders);
+UserRouter.post("/addaddress", addaddress);
+UserRouter.get("/getalladdress", getalladdress);
+UserRouter.post("/editAddress", editAddress);
 
 module.exports = UserRouter;

@@ -25,6 +25,7 @@ datasource db {
     created_date            DateTime? 
     customer_wish_list      customer_wish_list[]
     customer_cart           customer_cart[]
+    customer_address        customer_address[]
     sales_orders  sales_order[] 
   }
 
@@ -87,4 +88,19 @@ model sales_order {
   sales_list             sales_list[]
   user_details           user_details?            @relation(fields: [customer_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "customer_id")
   
+}
+
+
+model customer_address {
+  id                   Int            @id @default(autoincrement())
+  customer_id          Int?
+  address              String?
+  city                 String?
+  state                String?
+  land_mark            String?
+  contact_number       String?
+  pincode              Int?
+  default              Boolean?
+  created_date         DateTime?                @db.Timestamp(6)
+  user_details         user_details?   @relation(fields: [customer_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "wish_list_user_fkey")
 }
