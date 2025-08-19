@@ -946,7 +946,7 @@ const addaddress = async (request, response) => {
 
     const customer_id = decoded.id;
    
-    const { address, city, state, land_mark, contact_number, pincode ,default_flag } =
+    const { address, city, state, land_mark, contact_number, full_name,pincode ,default_flag } =
       request.body;
     if (!customer_id) {
       return res
@@ -956,6 +956,7 @@ const addaddress = async (request, response) => {
     const newAddress = await prisma.customer_address.create({
       data: {
         customer_id,
+        full_name,
         address: address || null,
         city: city || null,
         state: state || null,
@@ -1056,7 +1057,7 @@ const editAddress = async (req, res) => {
     }
 
     const customer_id = decoded.id;
-    const { id, address, city, state, land_mark, contact_number, pincode } = req.body;
+    const { id, address,full_name, city, state, land_mark, contact_number, pincode } = req.body;
 
     if (!id) {
       return res.status(400).json({
