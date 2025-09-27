@@ -844,13 +844,18 @@ const newsalesOrder = async (request, response) => {
           data: {
             so_number: sales_orderdata.id,
             product_id: product.product_id,
-            order_qty: parseInt(product.order_qty),
+            order_qty: parseInt(product.quantity),
             sales_price: parseInt(product.sales_price),
             created_date: istDate,
           },
         });
       }
+      // ✅ Delete cart items after sales order is created
+      await prisma.cart.deleteMany({
+        where: { customer_id },
+      });
     });
+
     console.log("fhfgfhj");
     return response
       .status(200)
@@ -983,6 +988,7 @@ const addaddress = async (request, response) => {
         pincode: pincode || null,
         default: default_flag,
         created_date: istDate,
+        active_flag: true,
       },
     });
     const updatelocationId = await prisma.user_details.update({
@@ -1037,7 +1043,7 @@ const getalladdress = async (request, response) => {
     const customer_id = decoded.id;
 
     const alldata = await prisma.customer_address.findMany({
-      where: { customer_id },
+      where: { customer_id, active_flag: true },
       orderBy: {
         created_date: "desc",
       },
@@ -1103,7 +1109,7 @@ const editAddress = async (req, res) => {
 
     // Check if address belongs to this customer
     const existingAddress = await prisma.customer_address.findFirst({
-      where: { id: id, customer_id: customer_id },
+      where: { id: id, customer_id: customer_id, active_flag: true },
     });
 
     if (!existingAddress) {
@@ -1234,9 +1240,12 @@ const removeaddress = async (req, res) => {
     });
   }
   try {
-    await prisma.customer_address.deleteMany({
+    await prisma.customer_address.update({
       where: {
         id: location_id,
+      },
+      data: {
+        active_flag: false,
       },
     });
     res.status(200).json({
@@ -1271,5 +1280,5 @@ module.exports = {
   getalladdress,
   editAddress,
   updatelocationId,
-  removeaddress
+  removeaddress,
 };

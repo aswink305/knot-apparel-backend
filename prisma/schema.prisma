@@ -104,6 +104,7 @@ model customer_address {
   contact_number       String?
   pincode              Int?
   default              Boolean?
+  active_flag          Boolean?
   created_date         DateTime?                @db.Timestamp(6)
   sales_order          sales_order[]
   user_details         user_details?   @relation(fields: [customer_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "wish_list_user_fkey")
