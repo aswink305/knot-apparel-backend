@@ -1226,8 +1226,8 @@ const removeaddress = async (req, res) => {
   }
 
   const customer_id = decoded.id;
-  if (!customer_id || !prod_id) {
-    logger.error("customer_id or prod_id undefined in removefromCart api");
+  if (!customer_id || !location_id) {
+    logger.error("customer_id or location_id undefined in removeaddress api");
     return res.status(400).json({
       error: true,
       message: "invalid request",
@@ -1248,7 +1248,7 @@ const removeaddress = async (req, res) => {
       error: "internal server error",
     });
     logger.error(
-      `Internal server error: ${error.message} in customer-removefromcart api`
+      `Internal server error: ${error.message} in customer-removeaddress api`
     );
   } finally {
     await prisma.$disconnect();
