@@ -19,7 +19,14 @@ const productadd = async (request, response) => {
       product_code,
       images = [],
     } = request.body;
+    const product_image = req.files;
+    let ProductImage = {};
 
+    for (i = 0; i < product_image?.length; i++) {
+      let keyName = `image${i + 1}`;
+
+      ProductImage[keyName] = product_image[i].location;
+    }
     // Basic validation
     if (!name) return response.status(400).json("Product Name cannot be blank");
     if (!product_type)
@@ -51,7 +58,7 @@ const productadd = async (request, response) => {
         updated_date: now,
         color,
         color_family,
-        images,
+        images:ProductImage,
       },
     });
 

@@ -41,7 +41,7 @@ model product_master {
   price             String?  @db.VarChar
   size              String?  @db.VarChar
   color             String?  @db.VarChar
-  image             String?  @db.VarChar
+  images            Json?  
   quantity          Int?
   status            String?  @db.VarChar()
   customer_cart     customer_cart[]
