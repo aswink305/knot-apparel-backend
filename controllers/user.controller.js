@@ -1199,6 +1199,62 @@ const updatelocationId = async (request, response) => {
   }
 };
 
+const removeaddress = async (req, res) => {
+  const { location_id } = req.body;
+
+  const token = req.headers.authorization;
+
+  if (!token) {
+    return res.status(401).json({
+      success: false,
+      message: "No token provided",
+      resetToken: 1,
+    });
+  }
+
+  let decoded;
+  try {
+    decoded = await verifyToken(token);
+  } catch (err) {
+    logger.error(`Token verification failed: ${err}`);
+    return res.status(401).json({
+      success: false,
+      message: "Unauthorized user",
+      Error: err,
+      resetToken: 1,
+    });
+  }
+
+  const customer_id = decoded.id;
+  if (!customer_id || !prod_id) {
+    logger.error("customer_id or prod_id undefined in removefromCart api");
+    return res.status(400).json({
+      error: true,
+      message: "invalid request",
+    });
+  }
+  try {
+    await prisma.customer_address.deleteMany({
+      where: {
+        id: location_id,
+      },
+    });
+    res.status(200).json({
+      success: true,
+      message: "successfully deleted",
+    });
+  } catch (error) {
+    res.status(500).json({
+      error: "internal server error",
+    });
+    logger.error(
+      `Internal server error: ${error.message} in customer-removefromcart api`
+    );
+  } finally {
+    await prisma.$disconnect();
+  }
+};
+
 module.exports = {
   userLogin,
   addUsers,
@@ -1215,4 +1271,5 @@ module.exports = {
   getalladdress,
   editAddress,
   updatelocationId,
+  removeaddress
 };
