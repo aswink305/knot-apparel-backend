@@ -329,6 +329,7 @@ const getUserById = async (req, res) => {
   }
 
   const id = decoded.id;
+  console.log("idd", id);
   try {
     const user = await prisma.user_details.findUnique({
       where: { id: parseInt(id) },
@@ -341,11 +342,21 @@ const getUserById = async (req, res) => {
         message: "User not found",
       });
     }
+    let locationaddress = null;
+    if (user.location_id) {
+      locationaddress = await prisma.customer_address.findFirst({
+        where: { id: user.location_id },
+      });
+    }
 
+    const finaldata = {
+      ...user,
+      address: locationaddress,
+    };
     return res.status(200).json({
       success: true,
       error: false,
-      data: user,
+      data: finaldata,
     });
   } catch (error) {
     console.error("Error fetching user:", error);
@@ -804,7 +815,8 @@ const newsalesOrder = async (request, response) => {
     const currentYear = istDate.getFullYear().toString().slice(-2);
 
     await prisma.$transaction(async (prisma) => {
-      const { so_status, total_amount, products, address } = request.body;
+      const { so_status, total_amount, products, address, address_id } =
+        request.body;
 
       const existingsalesOrders = await prisma.sales_order.findMany({
         where: { customer_id },
@@ -821,6 +833,7 @@ const newsalesOrder = async (request, response) => {
           so_status,
           customer_address: address,
           created_date: istDate,
+          address_id,
           customer_id,
         },
       });
@@ -881,17 +894,14 @@ const getMyOrders = async (request, response) => {
 
     const orders = await prisma.sales_order.findMany({
       where: { customer_id },
-      // include: {
-      //   sales_list: {
-      //     include: {
-      //       product_master: true,
-      //     },
-      //   },
-      // },
+      include: {
+        customer_addressid: true,
+      },
       orderBy: {
         created_date: "desc",
       },
     });
+    console.log("orders", orders);
     for (const order of orders) {
       const sales = await prisma.sales_list.findMany({
         where: { so_number: order.id },
@@ -945,9 +955,17 @@ const addaddress = async (request, response) => {
     }
 
     const customer_id = decoded.id;
-   
-    const { address, city, state, land_mark, contact_number, full_name,pincode ,default_flag } =
-      request.body;
+
+    const {
+      address,
+      city,
+      state,
+      land_mark,
+      contact_number,
+      full_name,
+      pincode,
+      default_flag,
+    } = request.body;
     if (!customer_id) {
       return res
         .status(400)
@@ -963,12 +981,20 @@ const addaddress = async (request, response) => {
         land_mark: land_mark || null,
         contact_number: contact_number || null,
         pincode: pincode || null,
-        default:default_flag,
-        created_date:istDate
+        default: default_flag,
+        created_date: istDate,
       },
     });
- console.log("addadressss",newAddress)
-    return response.status(201).json({
+    const updatelocationId = await prisma.user_details.update({
+      where: {
+        id: customer_id,
+      },
+      data: {
+        location_id: newAddress.id,
+      },
+    });
+    console.log("addadressss", updatelocationId);
+    return response.status(200).json({
       success: true,
       message: "Customer address added successfully",
       data: newAddress,
@@ -1012,9 +1038,9 @@ const getalladdress = async (request, response) => {
 
     const alldata = await prisma.customer_address.findMany({
       where: { customer_id },
-      // orderBy: {
-      //   created_date: "desc",
-      // },
+      orderBy: {
+        created_date: "desc",
+      },
     });
 
     return response.status(200).json({
@@ -1057,7 +1083,16 @@ const editAddress = async (req, res) => {
     }
 
     const customer_id = decoded.id;
-    const { id, address,full_name, city, state, land_mark, contact_number, pincode } = req.body;
+    const {
+      id,
+      address,
+      full_name,
+      city,
+      state,
+      land_mark,
+      contact_number,
+      pincode,
+    } = req.body;
 
     if (!id) {
       return res.status(400).json({
@@ -1095,12 +1130,69 @@ const editAddress = async (req, res) => {
       message: "Customer address updated successfully",
       data: updatedAddress,
     });
-
   } catch (error) {
     logger.error(`An error occurred in editAddress: ${error.message}`);
     return res.status(500).json({
       success: false,
       message: "Internal server error",
+    });
+  } finally {
+    await prisma.$disconnect();
+  }
+};
+
+const updatelocationId = async (request, response) => {
+  try {
+    const token = request.headers.authorization;
+
+    if (!token) {
+      return response.status(401).json({
+        success: false,
+        message: "No token provided",
+        resetToken: 1,
+      });
+    }
+
+    let decoded;
+    try {
+      decoded = await verifyToken(token);
+    } catch (err) {
+      logger.error(`Token verification failed: ${err}`);
+      return response.status(401).json({
+        success: false,
+        message: "Unauthorized user",
+        resetToken: 1,
+      });
+    }
+
+    const customer_id = decoded.id;
+
+    const { location_id } = request.body;
+    if (!customer_id) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Customer ID is required" });
+    }
+
+    const updatelocationId = await prisma.user_details.update({
+      where: {
+        id: customer_id,
+      },
+      data: {
+        location_id: location_id,
+      },
+    });
+    console.log("addadressss", updatelocationId);
+    return response.status(200).json({
+      success: true,
+      message: "Updated successfully",
+      data: updatelocationId,
+    });
+  } catch (error) {
+    logger.error(`An error occurred in getMyOrders: ${error.message}`);
+    return response.status(500).json({
+      success: false,
+      message: error.message,
     });
   } finally {
     await prisma.$disconnect();
@@ -1121,5 +1213,6 @@ module.exports = {
   getMyOrders,
   addaddress,
   getalladdress,
-  editAddress
+  editAddress,
+  updatelocationId,
 };

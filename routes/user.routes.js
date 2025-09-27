@@ -14,6 +14,7 @@ const {
   addaddress,
   getalladdress,
   editAddress,
+  updatelocationId
 } = require("../controllers/user.controller");
 
 const UserRouter = express.Router();
@@ -32,5 +33,6 @@ UserRouter.get("/getMyOrders", getMyOrders);
 UserRouter.post("/addaddress", addaddress);
 UserRouter.get("/getalladdress", getalladdress);
 UserRouter.post("/editAddress", editAddress);
+UserRouter.post("/updatelocationId", updatelocationId);
 
 module.exports = UserRouter;
