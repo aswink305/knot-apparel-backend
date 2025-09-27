@@ -814,11 +814,11 @@ const newsalesOrder = async (request, response) => {
     );
     const currentYear = istDate.getFullYear().toString().slice(-2);
 
-    await prisma.$transaction(async (prisma) => {
+    await prisma.$transaction(async (tx) => {
       const { so_status, total_amount, products, address, address_id } =
         request.body;
 
-      const existingsalesOrders = await prisma.sales_order.findMany({
+      const existingsalesOrders = await tx.sales_order.findMany({
         where: { customer_id },
       });
 
@@ -826,7 +826,7 @@ const newsalesOrder = async (request, response) => {
       const formattedNewId = ("0000" + newId).slice(-4);
       const so_number = `${currentYear}${formattedNewId}`;
 
-      const sales_orderdata = await prisma.sales_order.create({
+      const sales_orderdata = await tx.sales_order.create({
         data: {
           so_number,
           total_amount,
@@ -837,10 +837,9 @@ const newsalesOrder = async (request, response) => {
           customer_id,
         },
       });
-      console.log("object", sales_orderdata);
+
       for (const product of products) {
-        console.log("productproduct", product);
-        await prisma.sales_list.create({
+        await tx.sales_list.create({
           data: {
             so_number: sales_orderdata.id,
             product_id: product.product_id,
@@ -850,8 +849,9 @@ const newsalesOrder = async (request, response) => {
           },
         });
       }
-      // ✅ Delete cart items after sales order is created
-      await prisma.cart.deleteMany({
+
+      // ✅ Use tx + correct model name
+      await tx.customer_cart.deleteMany({
         where: { customer_id },
       });
     });
