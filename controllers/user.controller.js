@@ -708,6 +708,9 @@ const getCart = async (req, res) => {
           },
         },
       },
+       orderBy: {
+        created_date: "desc",
+      },
     });
 
     return res.status(200).json({
@@ -841,7 +844,7 @@ const newsalesOrder = async (request, response) => {
       for (const product of products) {
         await tx.sales_list.create({
           data: {
-            so_number: sales_orderdata.id,
+            so_number: sales_orderdata.sales_id,
             product_id: product.product_id,
             order_qty: parseInt(product.quantity),
             sales_price: parseInt(product.sales_price),
