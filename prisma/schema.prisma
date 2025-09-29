@@ -55,6 +55,7 @@ model customer_cart {
   customer_id    Int
   product_id     Int
   quantity       Int
+  created_date      DateTime? @db.Timestamp(6)
   user_details   user_details   @relation(fields: [customer_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "customer_cart_user_fkey")
   product_master product_master @relation(fields: [product_id], references: [product_id], onDelete: NoAction, onUpdate: NoAction, map: "customer_cart_product_fkey")
 }
@@ -63,6 +64,7 @@ model customer_wish_list {
   id             Int            @id @default(autoincrement())
   customer_id    Int
   product_id     Int
+  created_date      DateTime? @db.Timestamp(6)
   user_details   user_details   @relation(fields: [customer_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "wish_list_user_fkey")
   product_master product_master @relation(fields: [product_id], references: [product_id], onDelete: NoAction, onUpdate: NoAction, map: "wish_list_product_fkey")
 }

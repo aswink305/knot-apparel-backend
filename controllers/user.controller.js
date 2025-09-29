@@ -408,6 +408,9 @@ const customerWishList = async (req, res) => {
         user_details: { id: logged_id },
         product_master: { product_id: prod_id },
       },
+      orderBy: {
+        created_date: "desc",
+      },
     });
 
     console.log("existingWish", existingWish);
@@ -719,7 +722,7 @@ const getCart = async (req, res) => {
     });
   } catch (error) {
     logger.error(
-      `Internal server error: ${error.message} in getCustomerWishList API`
+      `Internal server error: ${error.message} in getCart API`
     );
     return res.status(500).json({
       success: false,
