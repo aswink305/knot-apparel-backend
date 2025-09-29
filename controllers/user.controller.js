@@ -926,7 +926,7 @@ const getMyOrders = async (request, response) => {
     console.log("orders", orders);
     for (const order of orders) {
       const sales = await prisma.sales_list.findMany({
-        where: { so_number: order.id },
+        where: { so_number: order.sales_id },
         include: {
           product_master: true,
         },
