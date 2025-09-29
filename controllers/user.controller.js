@@ -708,7 +708,7 @@ const getCart = async (req, res) => {
           },
         },
       },
-       orderBy: {
+      orderBy: {
         created_date: "desc",
       },
     });
@@ -821,11 +821,25 @@ const newsalesOrder = async (request, response) => {
       const { so_status, total_amount, products, address, address_id } =
         request.body;
 
-      const existingsalesOrders = await tx.sales_order.findMany({
-        where: { customer_id },
+      // const existingsalesOrders = await tx.sales_order.findMany({
+      //   where: { customer_id },
+      // });
+
+      // const newId = existingsalesOrders.length + 1;
+      // const formattedNewId = ("0000" + newId).slice(-4);
+      // const so_number = `${currentYear}${formattedNewId}`;
+
+      const lastOrder = await tx.sales_order.findFirst({
+        orderBy: { sales_id: "desc" }, // or created_date: 'desc'
+        select: { so_number: true },
       });
 
-      const newId = existingsalesOrders.length + 1;
+      let newId = 1;
+      if (lastOrder?.so_number) {
+        const lastSeq = parseInt(lastOrder.so_number.slice(-4)); // get last 4 digits
+        newId = lastSeq + 1;
+      }
+
       const formattedNewId = ("0000" + newId).slice(-4);
       const so_number = `${currentYear}${formattedNewId}`;
 
