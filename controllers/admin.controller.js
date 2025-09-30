@@ -297,7 +297,7 @@ const getOrders = async (request, response) => {
         created_date: "desc",
       },
     });
-  
+
     for (const order of orders) {
       const sales = await prisma.sales_list.findMany({
         where: { so_number: order.id },
@@ -326,6 +326,45 @@ const getOrders = async (request, response) => {
   }
 };
 
+const updateorderstatus = async (request, response) => {
+  console.log("update order data:", request.body);
+
+  try {
+    const { sales_id, so_status } = request.body;
+
+    if (!sales_id)
+      return response.status(400).json("sales_id cannot be null");
+
+    const now = new Date();
+    const findsales = await prisma.sales_order.findFirst({
+      where: {
+        sales_id,
+      }
+    });
+    if (!findsales) {
+      return response.status(404).json("Order not found");
+    }
+
+    const updateSales = await prisma.sales_order.update({
+      where: {
+        sales_id,
+      },
+      data: {
+        so_status:so_status
+      },
+    });
+    
+    response
+      .status(201)
+      .json(`${sales_id} updated successfully.`);
+  } catch (err) {
+    console.error("Error in sales update:", err.message);
+    response.status(500).json("Internal Server Error");
+  } finally {
+    await prisma.$disconnect();
+  }
+};
+
 module.exports = {
   addNewProduct,
   deleteProduct,
@@ -334,5 +373,6 @@ module.exports = {
   getUserDetails,
   getCustomerOrder,
   getDashboardCounts,
-  getOrders
+  getOrders,
+  updateorderstatus
 };

@@ -8,6 +8,7 @@ const {
   getCustomerOrder,
   getDashboardCounts,
   getOrders,
+  updateorderstatus
 } = require("../controllers/admin.controller");
 const AdminRouter = express.Router();
 
@@ -19,5 +20,5 @@ AdminRouter.get("/getUserDetails", getUserDetails);
 AdminRouter.get("/getCustomerOrder", getCustomerOrder);
 AdminRouter.get("/getDashboardCounts", getDashboardCounts);
 AdminRouter.get("/getOrders", getOrders);
-
+AdminRouter.post("/updateorderstatus", updateorderstatus);
 module.exports = AdminRouter;
