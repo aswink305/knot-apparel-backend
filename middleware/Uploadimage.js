@@ -20,13 +20,10 @@ const upload = multer({
   storage: multerS3({
     s3: awsS3,
     bucket: bucket,
-    // acl: 'public-read',
-    key: function (req, file, cb) {
+    key: (req, file, cb) => {
       cb(null, Date.now().toString() + "-" + file.originalname);
     },
   }),
-
-  // limits: { fileSize: 5 * 1024 * 1024 },
 });
 
 module.exports = { upload };

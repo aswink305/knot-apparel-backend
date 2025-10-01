@@ -2,13 +2,12 @@ const { request } = require("express");
 const { prisma } = require("../utils");
 require("dotenv").config();
 
-const addNewProduct = async (request, response) => {
-  console.log("Adding new product data:", request.body);
+const addNewProduct = async (req, res) => {
+  console.log("Adding new product data:", req.body);
 
   try {
     const {
       product_name,
-      image,
       description,
       price,
       size,
@@ -16,63 +15,66 @@ const addNewProduct = async (request, response) => {
       color_name,
       quantity,
       product_type,
-    } = JSON.parse(request.body.data);
-    const product_image = req.files;
-    let ProductImage = {};
+    } = req.body;
 
-    for (i = 0; i < product_image?.length; i++) {
-      let keyName = `image${i + 1}`;
-
-      ProductImage[keyName] = product_image[i].location;
-    }
+    // Validations
     if (!product_name)
-      return response.status(400).json("Product Name cannot be blank");
+      return res.status(400).json("Product Name cannot be blank");
     if (!product_type)
-      return response.status(400).json("Please choose product type");
+      return res.status(400).json("Please choose product type");
 
+    const images = req.files?.map((file) => file.key); // array of S3 keys
+    if (!images || images.length === 0)
+      return res.status(400).json("At least one image is required");
+
+    // Generate next product_code
     const lastProduct = await prisma.product_master.findFirst({
-      orderBy: {
-        product_code: "desc",
-      },
-      select: {
-        product_code: true,
-      },
+      orderBy: { product_code: "desc" },
+      select: { product_code: true },
     });
+
     let nextNumber = 1;
     if (lastProduct && lastProduct.product_code) {
       const lastNumber = parseInt(lastProduct.product_code.slice(1), 10);
-      if (!isNaN(lastNumber)) {
-        nextNumber = lastNumber + 1;
-      }
+      if (!isNaN(lastNumber)) nextNumber = lastNumber + 1;
     }
     const product_code = `D${String(nextNumber).padStart(4, "0")}`;
     const now = new Date();
 
+    // Convert numeric fields
+    const quantityInt = parseInt(quantity, 10);
+    if (isNaN(quantityInt))
+      return res.status(400).json("Quantity must be a number");
+
+    // Convert price to string (since DB expects VARCHAR)
+    const priceStr = price.toString();
+
+    // Create product
     const newProduct = await prisma.product_master.create({
       data: {
         product_code,
         product_name,
-        color_name,
         description,
         product_type,
-        price,
+        price: priceStr,
         size,
         color,
-        image,
-        quantity,
+        color_name,
+        images: images,
+        quantity: quantityInt,
         status: "Active",
-        images: ProductImage,
         created_date: now,
         updated_date: now,
       },
     });
+
     console.log("newProduct----", newProduct);
-    response
+    res
       .status(201)
       .json(`${product_name} added to the Product master successfully.`);
   } catch (err) {
     console.error("Error in productadd:", err.message);
-    response.status(500).json("Internal Server Error");
+    res.status(500).json("Internal Server Error");
   } finally {
     await prisma.$disconnect();
   }
@@ -119,61 +121,73 @@ const deleteProduct = async (request, response) => {
   }
 };
 
-const updateProduct = async (request, response) => {
-  console.log("update product data:", request.body);
-
+const updateProduct = async (req, res) => {
   try {
-    const {
+    // Destructure incoming data
+    let {
       product_id,
       product_name,
-      image,
       description,
       price,
       size,
       color,
+      color_name,
       quantity,
       product_type,
-    } = request.body;
+      existing_images, // array of previously uploaded images
+    } = req.body;
 
-    if (!product_id)
-      return response.status(400).json("Product id cannot be null");
+    // Convert product_id to integer
+    const productIdInt = parseInt(product_id, 10);
+    if (isNaN(productIdInt)) return res.status(400).json("Invalid product id");
 
-    const now = new Date();
+    // Find the product first
     const findProduct = await prisma.product_master.findFirst({
-      where: {
-        product_id,
-      },
-      select: {
-        product_name: true,
-      },
+      where: { product_id: productIdInt },
     });
-    if (!findProduct) {
-      return response.status(404).json("Product not found");
+
+    if (!findProduct) return res.status(404).json("Product not found");
+
+    // Handle uploaded images from multer
+    const uploadedImages = req.files?.map((file) => file.key) || [];
+
+    // Merge existing images with new uploads
+    let imagesToSave = [];
+    if (existing_images) {
+      const parsedExisting =
+        typeof existing_images === "string"
+          ? JSON.parse(existing_images)
+          : existing_images;
+      imagesToSave = [...parsedExisting, ...uploadedImages];
+    } else {
+      imagesToSave = uploadedImages;
     }
 
-    const updateProduct = await prisma.product_master.update({
-      where: {
-        product_id,
-      },
+    if (!imagesToSave.length)
+      return res.status(400).json("At least one image is required");
+
+    // Update the product
+    const updatedProduct = await prisma.product_master.update({
+      where: { product_id: productIdInt },
       data: {
         product_name,
         description,
         product_type,
-        price,
+        price: price.toString(),
         size,
         color,
-        image,
-        quantity,
-        updated_date: now,
+        color_name,
+        images: imagesToSave,
+        quantity: parseInt(quantity, 10),
+        updated_date: new Date(),
       },
     });
-    console.log("newProduct----", updateProduct);
-    response
-      .status(201)
-      .json(`${findProduct.product_name} updated successfully.`);
+
+    console.log("Updated Product:", updatedProduct);
+    res.status(201).json(`${product_name} updated successfully.`);
   } catch (err) {
-    console.error("Error in productadd:", err.message);
-    response.status(500).json("Internal Server Error");
+    console.error("Error in updateProduct:", err.message);
+    res.status(500).json("Internal Server Error");
   } finally {
     await prisma.$disconnect();
   }
@@ -310,7 +324,7 @@ const getOrders = async (request, response) => {
 
     for (const order of orders) {
       const sales = await prisma.sales_list.findMany({
-        where: { so_number: order.sales_id },
+        where: { so_number: order.id },
         include: {
           product_master: true,
         },

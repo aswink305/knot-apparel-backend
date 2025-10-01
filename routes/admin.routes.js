@@ -13,9 +13,9 @@ const {
 const { upload } = require("../middleware/Uploadimage");
 const AdminRouter = express.Router();
 
-AdminRouter.post("/addProduct", upload.array("image"), addNewProduct);
+AdminRouter.post("/addProduct", upload.array("images"), addNewProduct);
 AdminRouter.delete("/deleteProduct/:product_id", deleteProduct);
-AdminRouter.put("/updateProduct", updateProduct);
+AdminRouter.put("/updateProduct", upload.array("images"), updateProduct);
 AdminRouter.post("/productDetails", productDetails);
 AdminRouter.get("/getUserDetails", getUserDetails);
 AdminRouter.get("/getCustomerOrder", getCustomerOrder);
