@@ -13,6 +13,7 @@ const addNewProduct = async (request, response) => {
       price,
       size,
       color,
+      color_name,
       quantity,
       product_type,
     } = JSON.parse(request.body.data);
@@ -51,6 +52,7 @@ const addNewProduct = async (request, response) => {
       data: {
         product_code,
         product_name,
+        color_name,
         description,
         product_type,
         price,
