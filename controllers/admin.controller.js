@@ -15,8 +15,15 @@ const addNewProduct = async (request, response) => {
       color,
       quantity,
       product_type,
-    } = request.body;
+    } = JSON.parse(request.body.data);
+    const product_image = req.files;
+    let ProductImage = {};
 
+    for (i = 0; i < product_image?.length; i++) {
+      let keyName = `image${i + 1}`;
+
+      ProductImage[keyName] = product_image[i].location;
+    }
     if (!product_name)
       return response.status(400).json("Product Name cannot be blank");
     if (!product_type)
@@ -52,6 +59,7 @@ const addNewProduct = async (request, response) => {
         image,
         quantity,
         status: "Active",
+        images: ProductImage,
         created_date: now,
         updated_date: now,
       },
@@ -332,14 +340,13 @@ const updateorderstatus = async (request, response) => {
   try {
     const { sales_id, so_status } = request.body;
 
-    if (!sales_id)
-      return response.status(400).json("sales_id cannot be null");
+    if (!sales_id) return response.status(400).json("sales_id cannot be null");
 
     const now = new Date();
     const findsales = await prisma.sales_order.findFirst({
       where: {
         sales_id,
-      }
+      },
     });
     if (!findsales) {
       return response.status(404).json("Order not found");
@@ -350,13 +357,11 @@ const updateorderstatus = async (request, response) => {
         sales_id,
       },
       data: {
-        so_status:so_status
+        so_status: so_status,
       },
     });
-    
-    response
-      .status(201)
-      .json(`${sales_id} updated successfully.`);
+
+    response.status(201).json(`${sales_id} updated successfully.`);
   } catch (err) {
     console.error("Error in sales update:", err.message);
     response.status(500).json("Internal Server Error");
@@ -374,5 +379,5 @@ module.exports = {
   getCustomerOrder,
   getDashboardCounts,
   getOrders,
-  updateorderstatus
+  updateorderstatus,
 };

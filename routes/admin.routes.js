@@ -8,11 +8,12 @@ const {
   getCustomerOrder,
   getDashboardCounts,
   getOrders,
-  updateorderstatus
+  updateorderstatus,
 } = require("../controllers/admin.controller");
+const { upload } = require("../middleware/Uploadimage");
 const AdminRouter = express.Router();
 
-AdminRouter.post("/addProduct", addNewProduct);
+AdminRouter.post("/addProduct", upload.array("image"), addNewProduct);
 AdminRouter.delete("/deleteProduct/:product_id", deleteProduct);
 AdminRouter.put("/updateProduct", updateProduct);
 AdminRouter.post("/productDetails", productDetails);
