@@ -721,9 +721,7 @@ const getCart = async (req, res) => {
       data: getdata,
     });
   } catch (error) {
-    logger.error(
-      `Internal server error: ${error.message} in getCart API`
-    );
+    logger.error(`Internal server error: ${error.message} in getCart API`);
     return res.status(500).json({
       success: false,
       message: "Internal server error",
@@ -788,6 +786,109 @@ const removeFromCart = async (req, res) => {
   }
 };
 
+// const newsalesOrder = async (request, response) => {
+//   try {
+//     const token = request.headers.authorization;
+
+//     if (!token) {
+//       return response.status(401).json({
+//         success: false,
+//         message: "No token provided",
+//         resetToken: 1,
+//       });
+//     }
+
+//     let decoded;
+//     try {
+//       decoded = await verifyToken(token);
+//     } catch (err) {
+//       logger.error(`Token verification failed: ${err}`);
+//       return response.status(401).json({
+//         success: false,
+//         message: "Unauthorized user",
+//         Error: err,
+//         resetToken: 1,
+//       });
+//     }
+//     console.log("newsalesorderrrr", request.body);
+//     const customer_id = decoded.id;
+
+//     const istDate = new Date(
+//       new Date().toLocaleString("en-US", { timeZone: "Asia/Kolkata" })
+//     );
+//     const currentYear = istDate.getFullYear().toString().slice(-2);
+
+//     await prisma.$transaction(async (tx) => {
+//       const { so_status, total_amount, products, address, address_id } =
+//         request.body;
+
+//       // const existingsalesOrders = await tx.sales_order.findMany({
+//       //   where: { customer_id },
+//       // });
+
+//       // const newId = existingsalesOrders.length + 1;
+//       // const formattedNewId = ("0000" + newId).slice(-4);
+//       // const so_number = `${currentYear}${formattedNewId}`;
+
+//       const lastOrder = await tx.sales_order.findFirst({
+//         orderBy: { sales_id: "desc" }, // or created_date: 'desc'
+//         select: { so_number: true },
+//       });
+
+//       let newId = 1;
+//       if (lastOrder?.so_number) {
+//         const lastSeq = parseInt(lastOrder.so_number.slice(-4)); // get last 4 digits
+//         newId = lastSeq + 1;
+//       }
+
+//       const formattedNewId = ("0000" + newId).slice(-4);
+//       const so_number = `${currentYear}${formattedNewId}`;
+
+//       const sales_orderdata = await tx.sales_order.create({
+//         data: {
+//           so_number,
+//           total_amount,
+//           so_status,
+//           customer_address: address,
+//           created_date: istDate,
+//           address_id,
+//           customer_id,
+//         },
+//       });
+
+//       for (const product of products) {
+//         await tx.sales_list.create({
+//           data: {
+//             so_number: sales_orderdata.sales_id,
+//             product_id: product.product_id,
+//             order_qty: parseInt(product.quantity),
+//             sales_price: parseInt(product.sales_price),
+//             created_date: istDate,
+//           },
+//         });
+//       }
+
+//       // ✅ Use tx + correct model name
+//       await tx.customer_cart.deleteMany({
+//         where: { customer_id },
+//       });
+//     });
+
+//     console.log("fhfgfhj");
+//     return response
+//       .status(200)
+//       .json({ success: true, message: "Sales order created successfully" });
+//   } catch (error) {
+//     console.log("errrrrr", error);
+//     logger.error(`An error occurred: ${error.message} in newsalesOrder API`);
+//     response
+//       .status(500)
+//       .json({ success: false, error: "Internal server error" });
+//   } finally {
+//     await prisma.$disconnect();
+//   }
+// };
+
 const newsalesOrder = async (request, response) => {
   try {
     const token = request.headers.authorization;
@@ -812,6 +913,7 @@ const newsalesOrder = async (request, response) => {
         resetToken: 1,
       });
     }
+
     console.log("newsalesorderrrr", request.body);
     const customer_id = decoded.id;
 
@@ -824,22 +926,14 @@ const newsalesOrder = async (request, response) => {
       const { so_status, total_amount, products, address, address_id } =
         request.body;
 
-      // const existingsalesOrders = await tx.sales_order.findMany({
-      //   where: { customer_id },
-      // });
-
-      // const newId = existingsalesOrders.length + 1;
-      // const formattedNewId = ("0000" + newId).slice(-4);
-      // const so_number = `${currentYear}${formattedNewId}`;
-
       const lastOrder = await tx.sales_order.findFirst({
-        orderBy: { sales_id: "desc" }, // or created_date: 'desc'
+        orderBy: { sales_id: "desc" },
         select: { so_number: true },
       });
 
       let newId = 1;
       if (lastOrder?.so_number) {
-        const lastSeq = parseInt(lastOrder.so_number.slice(-4)); // get last 4 digits
+        const lastSeq = parseInt(lastOrder.so_number.slice(-4));
         newId = lastSeq + 1;
       }
 
@@ -870,13 +964,11 @@ const newsalesOrder = async (request, response) => {
         });
       }
 
-      // ✅ Use tx + correct model name
       await tx.customer_cart.deleteMany({
         where: { customer_id },
       });
     });
 
-    console.log("fhfgfhj");
     return response
       .status(200)
       .json({ success: true, message: "Sales order created successfully" });
@@ -886,8 +978,6 @@ const newsalesOrder = async (request, response) => {
     response
       .status(500)
       .json({ success: false, error: "Internal server error" });
-  } finally {
-    await prisma.$disconnect();
   }
 };
 
