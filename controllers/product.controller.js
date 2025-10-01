@@ -17,8 +17,8 @@ const productadd = async (request, response) => {
       color,
       color_family,
       product_code,
-      images = [],
-    } = request.body;
+    } = JSON.parse(request.body.data);
+
     const product_image = req.files;
     let ProductImage = {};
 
@@ -58,7 +58,7 @@ const productadd = async (request, response) => {
         updated_date: now,
         color,
         color_family,
-        images:ProductImage,
+        images: ProductImage,
       },
     });
 
