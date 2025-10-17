@@ -27,7 +27,6 @@ const addNewProduct = async (req, res) => {
     if (!images || images.length === 0)
       return res.status(400).json("At least one image is required");
 
-    // Generate next product_code
     const lastProduct = await prisma.product_master.findFirst({
       orderBy: { product_code: "desc" },
       select: { product_code: true },
